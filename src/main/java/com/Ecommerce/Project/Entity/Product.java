@@ -40,6 +40,9 @@ public class Product {
     private Integer stockAvailable;
 
 
+    @Version
+    private Integer version;
+
 
     @ManyToOne
     @JoinColumn(name="user_id")
