@@ -1,13 +1,9 @@
 package com.Ecommerce.Project.config;
 
-import com.Ecommerce.Project.security.CustomUserDetailsService;
-import com.Ecommerce.Project.service.UserService;
+import com.Ecommerce.Project.filter.LoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.sql.DataSource;
 
@@ -25,12 +22,17 @@ import javax.sql.DataSource;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public LoggingFilter loggingFilter(){
+        return new LoggingFilter();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http,LoggingFilter loggingFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/register", "/login","/products","/filterProducts","/cursor").permitAll()
-                        .requestMatchers("/products/manager").hasRole("MANAGER")//
-                        .requestMatchers("/order").hasRole("USER")
+                        .requestMatchers("/products/manager").hasRole("MANAGER")
+                        .requestMatchers("/order").hasAnyRole("USER","MANAGER","ADMIN")
                         // create product
                         .requestMatchers("/product/{id}","productDTO/{id}").permitAll()//to display project details
                         .requestMatchers("/product/**").hasAnyRole("MANAGER", "ADMIN")
@@ -40,6 +42,7 @@ public class SecurityConfig {
                               // view manager's products
                         .anyRequest().authenticated()
                 )
+                .addFilterAfter(loggingFilter, BasicAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(Customizer.withDefaults());

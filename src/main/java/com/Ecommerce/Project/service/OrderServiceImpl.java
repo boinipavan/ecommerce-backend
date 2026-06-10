@@ -9,8 +9,10 @@ import com.Ecommerce.Project.Entity.Product;
 import com.Ecommerce.Project.Entity.User;
 import jakarta.transaction.Transactional;
 import org.hibernate.dialect.lock.OptimisticEntityLockException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,14 +23,16 @@ public class OrderServiceImpl implements OrderService{
     private OrderDAO orderDAO;
     private UserDAO userDAO;
     private ProductDAO productDAO;
+    private IdempotencyService idempotencyService;
 
     @Autowired
-    public OrderServiceImpl(OrderDAO orderDAO,UserDAO userDAO,ProductDAO productDAO) {
+    public OrderServiceImpl(OrderDAO orderDAO,UserDAO userDAO,ProductDAO productDAO,IdempotencyService idempotencyService) {
         this.orderDAO = orderDAO;
         this.userDAO=userDAO;
         this.productDAO=productDAO;
+        this.idempotencyService=idempotencyService;
     }
-
+    //old method
     @Override
     public void saveOrder(List<OrderDTO> orderDTO) {
 
@@ -62,8 +66,7 @@ public class OrderServiceImpl implements OrderService{
 
     @Override
     @Transactional
-    public void placeOrder(OrderDTO orderDTO) {
-
+    public Order placeOrder(OrderDTO orderDTO) {
             try {
                 Product product = productDAO.getProductById(orderDTO.productId);
                 User user = userDAO.getUser(orderDTO.getUserId());
@@ -73,10 +76,11 @@ public class OrderServiceImpl implements OrderService{
                 order.setQuantity(orderDTO.getQuantity());
                 order.setLocalDateTime(LocalDateTime.now());
                 order.setTotalPrice(product.getPrice() * orderDTO.totalPrice);
-                orderDAO.saveOrder(order);
+                Order savedOrder =orderDAO.saveOrder(order);
                 product.setStockAvailable(product.getStockAvailable() - orderDTO.quantity);
                 Thread.sleep(30000);
                 productDAO.saveProduct(product);
+                return savedOrder;
             } catch (OptimisticEntityLockException e) {
 
                     throw new OptimisticEntityLockException( e,"concurreny issue occured retry");
@@ -84,7 +88,8 @@ public class OrderServiceImpl implements OrderService{
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
-
+            catch(ConstraintViolationException e){
+                throw e;
+            }
     }
 }

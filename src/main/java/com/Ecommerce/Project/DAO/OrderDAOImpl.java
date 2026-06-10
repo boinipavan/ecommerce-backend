@@ -1,6 +1,5 @@
 package com.Ecommerce.Project.DAO;
 
-import com.Ecommerce.Project.DTO.OrderDTO;
 import com.Ecommerce.Project.Entity.Order;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -17,8 +16,9 @@ public class OrderDAOImpl implements OrderDAO {
 
     @Override
     @Transactional
-    public void saveOrder(Order order) {
+    public Order saveOrder(Order order) {
         entityManager.persist(order);
+        return order;
     }
 
     @Override
