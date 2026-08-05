@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/products/manager").hasRole("MANAGER")
                         .requestMatchers("/order").hasAnyRole("USER","MANAGER","ADMIN")
                         // create product
-                        .requestMatchers("/product/{id}","productDTO/{id}").permitAll()//to display project details
+                        .requestMatchers("/product/{id}","/productDTO/{id}").permitAll()//to display project details
                         .requestMatchers("/product/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/cart/**").permitAll()// update/delete product by id
                         .requestMatchers("/roleUpgrade/**").permitAll()

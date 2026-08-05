@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
@@ -99,7 +100,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
                 else if(status==Idempotency.Status.IN_PROGRESS ){
                     log.info("idempotency key={} request is inprogress",idempotency_key);
                     return new IdempotencyAPIResponse<>(status,"Request Is In Progress",
-                            statusCode,null);
+                            202,null);
                 }
                 try {
                     T existingOrder = objectMapper.readValue(existingIdempotencyRecord.getResponsePayload(), responseType);
@@ -116,8 +117,9 @@ public class IdempotencyServiceImpl implements IdempotencyService {
             }
         }
         catch (Exception e) {
-            if(savedIdempotencyRecord!=null) {
-               idempotencyPersistenceService.markFailure(savedIdempotencyRecord);
+            Optional<Idempotency> refetchedIdempotency =idempotencyRepository.findByUserIdAndIdempotencyKey(savedIdempotencyRecord.getUserId(),savedIdempotencyRecord.getIdempotencyKey());
+            if(refetchedIdempotency.isPresent()) {
+               //idempotencyPersistenceService.markFailure(savedIdempotencyRecord);
             }
             throw new RuntimeException("unhandled Exception Occurred While Handling Idempotency Key Conflict",e);
         }
@@ -147,7 +149,7 @@ public class IdempotencyServiceImpl implements IdempotencyService {
             if(status==Idempotency.Status.COMPLETED) {
                 try {
                     log.info(
-                            "Retry completed successfully for idempotency key={}",
+                            "Try Acquire Failed But Retry completed successfully by Other Request for idempotency key={}",
                             existingIdempotencyRecord.getIdempotencyKey()
                     );
 
