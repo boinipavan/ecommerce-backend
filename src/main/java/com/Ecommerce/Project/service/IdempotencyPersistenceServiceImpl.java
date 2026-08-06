@@ -28,7 +28,7 @@ public class IdempotencyPersistenceServiceImpl implements IdempotencyPersistence
         //refetching idempotency record to avoid stale data update
         Idempotency record=idempotencyRepository.findById(savedIdempotencyRecord.getId()).orElseThrow(()->new IdempotencyRecordNotFoundException("Idempotency Record Not Found While Updating Record to Failure",savedIdempotencyRecord.getIdempotencyKey(),null));
         if(record.getStatus()== Idempotency.Status.COMPLETED){
-            return;
+            return ;
         }
         record.setUpdatedAt(LocalDateTime.now());
         record.setStatus(Idempotency.Status.FAILED);
@@ -45,11 +45,14 @@ public class IdempotencyPersistenceServiceImpl implements IdempotencyPersistence
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public <T> void markSuccess(T order, int statusCode, Idempotency savedIdempotencyRecord) throws JsonProcessingException {
         //refetching idempotency record to avoid stale data update
-        Idempotency record=idempotencyRepository.findById(savedIdempotencyRecord.getId()).orElseThrow(()->new IdempotencyRecordNotFoundException("Idempotency Record Not Found",savedIdempotencyRecord.getIdempotencyKey(),null));
+
+        Idempotency record=idempotencyRepository.findById(savedIdempotencyRecord.getId()).orElseThrow(()->new IdempotencyRecordNotFoundException("Idempotency Record Not Found While Updating Record to Success",savedIdempotencyRecord.getIdempotencyKey(),null));
         if(record.getStatus()!= Idempotency.Status.IN_PROGRESS){
             return;
         }
+
         String responsePayload=objectMapper.writeValueAsString(order);
+
         int isUpdated=idempotencyRepository.markSuccessIfInProgress(record.getId(),responsePayload,LocalDateTime.now(),statusCode);
         if(isUpdated==0){
             throw new IdempotencyStateTransitionException("failure occurred while marking success",savedIdempotencyRecord.getIdempotencyKey(),null);
@@ -66,7 +69,6 @@ public class IdempotencyPersistenceServiceImpl implements IdempotencyPersistence
         newIdempotencyEntry.setCreatedAt(now);
         newIdempotencyEntry.setUpdatedAt(now);
         newIdempotencyEntry.setExpireAt(now.plusHours(24));
-
         return idempotencyRepository.save(newIdempotencyEntry);
     }
 }
