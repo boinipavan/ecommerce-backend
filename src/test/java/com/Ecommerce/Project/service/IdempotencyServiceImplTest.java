@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
@@ -196,7 +197,9 @@ class IdempotencyServiceImplTest {
         when(idempotencyRepository.findByUserIdAndIdempotencyKey(USER_ID,IDEMPOTENCY_KEY)).thenReturn(Optional.of(idempotency));
         when(idempotencyPersistenceService.tryAcquireRowForRetry(anyLong(),any(LocalDateTime.class),any(LocalDateTime.class))).thenReturn(true);
         when(idempotencyRepository.findById(anyLong())).thenReturn(Optional.of(idempotency_record_for_retry));
-        when(supplier.get()).thenReturn(ResponseEntity.ok(new Order()));
+        when(supplier.get())
+                .thenReturn(ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new Order()));
 
         IdempotencyAPIResponse<Order> response=idempotencyServiceImpl.handleIdempotentRequest(IDEMPOTENCY_KEY,USER_ID,new OrderDTO(),supplier,Order.class,servletRequest);
 
@@ -206,7 +209,7 @@ class IdempotencyServiceImplTest {
         verify(idempotencyPersistenceService).markSuccess(any(),eq(201),any());
         verify(idempotencyRepository).findByUserIdAndIdempotencyKey(USER_ID,IDEMPOTENCY_KEY);
         assertEquals(Idempotency.Status.COMPLETED,response.status);
-        assertEquals(200,response.statusCode);
+        assertEquals(201,response.statusCode);
     }
 
     @Test

@@ -1,10 +1,14 @@
-package com.Ecommerce.Project.service;
+package com.Ecommerce.Project.integration;
 
 import com.Ecommerce.Project.DAO.ProductDAO;
 import com.Ecommerce.Project.DTO.OrderDTO;
 import com.Ecommerce.Project.Entity.Product;
+import com.Ecommerce.Project.config.AbstractIntegrationTest;
+import com.Ecommerce.Project.service.OrderService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -12,12 +16,14 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-@SpringBootTest
-class OrderServiceImplTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class OrderServiceImplTest extends AbstractIntegrationTest {
     @Autowired
     private OrderService orderService;
     @Autowired
     private ProductDAO productDAO;
+
+
     @Test
     public void ordersConcurrencyIssueTestingForOptimisticLocking(){
         int threads=100;

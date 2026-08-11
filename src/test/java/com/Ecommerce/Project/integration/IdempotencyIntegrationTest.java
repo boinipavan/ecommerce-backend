@@ -14,6 +14,7 @@ import com.Ecommerce.Project.service.IdempotencyService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import java.util.function.Supplier;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
@@ -46,6 +48,12 @@ public class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
     private final String IDEMPOTENCY_KEY="key-123";
     private final int USER_ID=1;
+
+    @BeforeEach
+    void cleanDatabase() {
+        idempotencyRepository.deleteAll();
+        idempotencyRepository.flush();
+    }
 
     @Test
     public void shouldExecuteBusinessLogicOnlyOnceForConcurrentRequests() throws Exception {
@@ -413,7 +421,7 @@ public class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         assertEquals(order.getQuantity(), persistedOrderPayload.getQuantity());
         assertEquals(order.getTotalPrice(), persistedOrderPayload.getTotalPrice());
         assertEquals(Order.Status.PLACED, persistedOrderPayload.getStatus());
-    }
+}
 
     public OrderDTO buildOrderDTO(){
         OrderDTO orderDTO=new OrderDTO();
