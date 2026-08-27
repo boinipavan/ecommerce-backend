@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+.mvn
+target
+logs
+*.iml
+README.md
+HELP.md
+.env
+secrets

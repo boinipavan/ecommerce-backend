@@ -1,0 +1,71 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      #MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", '-p${MYSQL_ROOT_PASSWORD}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    image: pavanboini23/ecommerce-backend:0.0.4
+    ports:
+      - "8080:8080"
+
+    cap_drop:
+      - ALL
+
+    volumes:
+      - backend-logs:/app/logs
+
+    tmpfs:
+      - /tmp
+
+    read_only: true
+
+    security_opt:
+      - no-new-privileges:true
+
+    restart: unless-stopped
+
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      #we are sending it through secrets
+      #SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+
+
+    secrets:
+      - source: mysql_password
+        target: spring.datasource.password
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mysql-data:
+  backend-logs:
+
+secrets:
+  mysql_password:
+    file: ./secrets/mysql_password.txt
