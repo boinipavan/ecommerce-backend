@@ -30,7 +30,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http,LoggingFilter loggingFilter) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/register", "/login","/products","/filterProducts","/cursor").permitAll()
+                                .requestMatchers("/actuator/health").permitAll()
+                       .requestMatchers("/register", "/login","/products","/filterProducts","/cursor").permitAll()
                         .requestMatchers("/products/manager").hasRole("MANAGER")
                         .requestMatchers("/order").hasAnyRole("USER","MANAGER","ADMIN")
                         // create product
@@ -39,7 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/cart/**").permitAll()// update/delete product by id
                         .requestMatchers("/roleUpgrade/**").permitAll()
 
-                              // view manager's products
+
                         .anyRequest().authenticated()
                 )
                 .addFilterAfter(loggingFilter, BasicAuthenticationFilter.class)
